@@ -422,14 +422,15 @@ int SetIPByContext(char* lpBatFile)
 
 	LOG_FILE("Set IP by CONTEXT.");
 	LOG_FILE(lpBatFile);
-	system(lpBatFile);    //???????????/
+	system(lpBatFile);    
 	LOG_FILE("Set IP finished!");
 	
+	/*
 	char hostname[128];
 	if(GetFieldValue(filename, "HOSTNAME", hostname))
 	{
 		strcpy(newhostname, hostname);
-	}
+	}*/
 
 	return 0;
 }
@@ -1178,11 +1179,12 @@ void RunServer()
 		fclose(fp);
 		*/
 
+        /*
 		if(strlen(newhostname)>0)
 			SetHostname(newhostname);
 		else
 			OnlyCreateSID();
-
+        */
 	}
 
 }
