@@ -1131,11 +1131,6 @@ void RunServer()
 
 	strcpy(newhostname, "");
 
-    //----------------
-	LOG_FILE("SetGangliaByContext");
-    SetGangliaByContext();
-    //-----------------
-
 	int if_Equal_UUID = ifEqualUUID();
 	if( if_Equal_UUID == 0 )
 	{
@@ -1186,6 +1181,11 @@ void RunServer()
 			OnlyCreateSID();
         */
 	}
+
+	//----------------
+	LOG_FILE("SetGangliaByContext");
+    SetGangliaByContext();
+    //-----------------
 
 }
 
