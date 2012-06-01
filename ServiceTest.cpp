@@ -344,7 +344,7 @@ int SetIPByContext(char* lpBatFile)
 	char buf[256];
 	while(fgets(buf, 256, fp))
 	{
-		if(strstr(buf, "_IP") || strstr(buf, "_NETMASK") || strstr(buf, "_GATEWAY"))
+		if(strstr(buf, "NET") && (strstr(buf, "_IP") || strstr(buf, "_NETMASK") || strstr(buf, "_GATEWAY")))  //---
 		{
 			AddToNet(buf);
 		}
@@ -404,6 +404,7 @@ int SetIPByContext(char* lpBatFile)
 			}
 
 			//---
+			
 			sprintf(buf, "net stop dhcp && net start dhcp");
 		    LOG_FILE(buf);
 			strcat(buf, "\r\n");
