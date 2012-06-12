@@ -375,16 +375,22 @@ int SetIPByContext(char* lpBatFile)
 	//	printf("OK, %s, %s, %s, %s\n", net_info[i].netcard, net_info[i].ip, net_info[i].netmask, net_info[i].gateway);
 			if(strlen(net_info[i].gateway)>1)
 			{
-				sprintf(buf, "netsh interface ip delete address %s gateway=all", net_info[i].netcard);
-                LOG_FILE(buf);
-			    strcat(buf, "\r\n");
-			    fputs(buf, fp);
+				//sprintf(buf, "netsh interface ip delete address %s gateway=all", net_info[i].netcard);
+                //LOG_FILE(buf);
+			    //strcat(buf, "\r\n");
+			    //fputs(buf, fp);
 
 				sprintf(buf, "netsh interface ip set address %s static %s %s %s 0", net_info[i].netcard, net_info[i].ip, net_info[i].netmask, net_info[i].gateway);
 	       	}
 			else
 				sprintf(buf, "netsh interface ip set address %s static %s %s", net_info[i].netcard, net_info[i].ip, net_info[i].netmask);
 			LOG_FILE(buf);
+			strcat(buf, "\r\n");
+			fputs(buf, fp);
+
+			//delete DNS
+            sprintf(buf, "netsh interface ip delete dns %s all", net_info[i].netcard);
+		    LOG_FILE(buf);
 			strcat(buf, "\r\n");
 			fputs(buf, fp);
 
@@ -405,10 +411,10 @@ int SetIPByContext(char* lpBatFile)
 
 			//---
 			
-			sprintf(buf, "net stop dhcp && net start dhcp");
-		    LOG_FILE(buf);
-			strcat(buf, "\r\n");
-			fputs(buf, fp);
+			//sprintf(buf, "net stop dhcp && net start dhcp");
+		    //LOG_FILE(buf);
+			//strcat(buf, "\r\n");
+			//fputs(buf, fp);
 			
 			continue;
 		}
@@ -1137,7 +1143,6 @@ void RunServer()
 	{
         LOG_FILE("IP Had Set, abort.");
 		Sleep(5000);
-		return;
 	}
 	else if(if_Equal_UUID == 1 || if_Equal_UUID ==2)
 	{
