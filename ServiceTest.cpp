@@ -452,6 +452,31 @@ int SetIPByContext(char* lpBatFile)
 	return 0;
 }
 
+bool ChangeXmlFile(string &fullPath,char *vm_uuid)
+{
+	try{
+		//创建一个XML的文档对象。
+        TiXmlDocument *myDocument = new TiXmlDocument(fullPath.c_str());
+        myDocument->LoadFile();
+        //获得根元素
+        TiXmlElement *RootElement = myDocument->RootElement();
+        //获得第一个节点。
+        TiXmlElement *FirstSettings = RootElement->FirstChildElement();
+        //获得第一个FirstSettings的Component节点和ComputerName节点。
+        TiXmlElement *Component = FirstSettings->FirstChildElement();
+        TiXmlElement *ComputerName = Component->FirstChildElement();
+	    //更改内容
+        ComputerName->FirstChild()->SetValue(vm_uuid);
+
+	    myDocument->SaveFile(fullPath.c_str());//保存到文件
+	} 
+	catch (string& e)
+    {
+        return false;
+    }
+    return true;    
+}
+
 //------------------------------------------------
 int ifEqualUUID()
 {
@@ -501,6 +526,15 @@ int ifEqualUUID()
 		return -2;
 	}
 
+    char hostname[128];
+	if(GetFieldValue(filename, "HOSTNAME", hostname))
+	{
+        string fullPath = "C:\\unattend.xml";
+        if(!ChangeXmlFile(fullPath,hostname))
+            LOG_FILE("Fail to change unattend.xml file!!!");
+	}else
+        LOG_FILE("No HOSTNAME in context.sh");
+
 	char vm_uuid[128];
 	if(GetFieldValue(filename, "VM_UUID", vm_uuid))
 	{
@@ -508,18 +542,60 @@ int ifEqualUUID()
 		if(0 == access(bcec_vm_info_file, 0))   //exist
 		{
 		    char vm_uuid_conf[128];
-			GetFieldValue(bcec_vm_info_file, "VM_UUID", vm_uuid_conf);
+			GetFieldValue(bcec_vm_info_file, "VM_UUID", vm_uuid_conf); //vm_uuid
 			if(strcmp(vm_uuid,vm_uuid_conf) == 0)
-				return 0;
+			{
+				char count[128];
+				GetFieldValue(bcec_vm_info_file, "SETIP_COUNT", count); //setip_count
+				if(strcmp(count,"1") == 0)   //1
+                {
+					fp=fopen(bcec_vm_info_file,"wb");  //clear the file
+                    char uuid[256];
+                    sprintf(uuid, "VM_UUID=\"%s\"\r\n", vm_uuid);
+			        fputs(uuid, fp);
+
+                    char setip_count[128];
+                    sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "2");
+                    fputs(setip_count, fp);
+
+	                fclose(fp);
+
+				    return 2;
+				}
+				else if(strcmp(count,"2") == 0)   //2
+                {
+					fp=fopen(bcec_vm_info_file,"wb");  //clear the file
+                    char uuid[256];
+                    sprintf(uuid, "VM_UUID=\"%s\"\r\n", vm_uuid);
+			        fputs(uuid, fp);
+
+                    char setip_count[128];
+                    sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "3");
+                    fputs(setip_count, fp);
+
+	                fclose(fp);
+
+				    return 3;
+				}
+				else if(strcmp(count,"3") == 0)  //3
+				{
+					return 0;
+				}                  
+			}	
 			else
 			{
                 fp=fopen(bcec_vm_info_file,"wb");  //clear the file
                 char uuid[256];
-                sprintf(uuid, "VM_UUID=\"%s\"", vm_uuid);
+                sprintf(uuid, "VM_UUID=\"%s\"\r\n", vm_uuid);
 			    fputs(uuid, fp);
+
+                char setip_count[128];
+                sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "1");
+                fputs(setip_count, fp);
+
 	            fclose(fp);
 
-				return 2;
+				return 1;
 			}
 		}
 		else  
@@ -528,12 +604,19 @@ int ifEqualUUID()
 			fp=fopen(bcec_vm_info_file, "wt");
 
 			char loguuid[256];
-            sprintf(loguuid, "VM_UUID=\"%s\"", vm_uuid);
-			fputs(loguuid, fp);
+            sprintf(loguuid, "VM_UUID=\"%s\"\r\n", vm_uuid);
+            fputs(loguuid, fp);
+			
+			char setip_count[128];
+            sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "1");
+            fputs(setip_count, fp);
+
 	        fclose(fp);
+
 			return 1;
 		}
 	}
+
 	LOG_FILE("No VM_UUID in context.sh");
     return -3;
 }
@@ -1151,6 +1234,16 @@ void RunServer()
 	int if_Equal_UUID = ifEqualUUID();
 	if( if_Equal_UUID == 0 )
 	{
+		LOG_FILE("IP Had Set, abort.");
+		Sleep(5000);
+	}
+	else if( if_Equal_UUID == 1 )
+	{
+        LOG_FILE("sysprep has started!");
+		system("C:\\soft\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\unattend.xml");	
+	}
+	else if( if_Equal_UUID == 3 )
+	{
         LOG_FILE("First set IP.");
 
 		LOG_FILE("SetIPByContext");
@@ -1190,17 +1283,9 @@ void RunServer()
 		else
 			OnlyCreateSID();
         */
-
-
-        LOG_FILE("IP Had Set, abort.");
-		Sleep(5000);
+       
 	}
-	else if(if_Equal_UUID == 1 || if_Equal_UUID ==2)
-	{
-        LOG_FILE("sysprep has started!");
-		system("C:\\soft\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\unattend.xml");	
-	}
-
+	
 	//----------------
 	LOG_FILE("SetGangliaByContext");
     SetGangliaByContext();
