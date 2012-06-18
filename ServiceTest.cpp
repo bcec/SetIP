@@ -11,6 +11,10 @@
 #include <iostream>
 #include "io.h"
 
+#include <windows.h>
+#include "tinystr.h"
+#include "tinyxml.h"
+
 #include <fstream>    //added by shenxy
 #include <sstream>
 
@@ -372,6 +376,12 @@ int SetIPByContext(char* lpBatFile)
 	{
 		if(strlen(net_info[i].netcard)>0)
 		{
+
+            sprintf(buf, "netsh interface set interface name=\"本地连接\" newname=%s", net_info[i].netcard);
+		    LOG_FILE(buf);
+			strcat(buf, "\r\n");
+			fputs(buf, fp);
+
 	//	printf("OK, %s, %s, %s, %s\n", net_info[i].netcard, net_info[i].ip, net_info[i].netmask, net_info[i].gateway);
 			if(strlen(net_info[i].gateway)>1)
 			{
@@ -1136,18 +1146,12 @@ void RunServer()
 	LOG_FILE("========================================");
 	LOG_FILE(VER_ID);
 
-	strcpy(newhostname, "");
+	//strcpy(newhostname, "");
 
 	int if_Equal_UUID = ifEqualUUID();
 	if( if_Equal_UUID == 0 )
 	{
-        LOG_FILE("IP Had Set, abort.");
-		Sleep(5000);
-	}
-	else if(if_Equal_UUID == 1 || if_Equal_UUID ==2)
-	{
-
-		LOG_FILE("First set IP.");
+        LOG_FILE("First set IP.");
 
 		LOG_FILE("SetIPByContext");
 		if(0 != SetIPByContext("C:\\Windows\\setip\\set_ip.bat"))
@@ -1186,6 +1190,15 @@ void RunServer()
 		else
 			OnlyCreateSID();
         */
+
+
+        LOG_FILE("IP Had Set, abort.");
+		Sleep(5000);
+	}
+	else if(if_Equal_UUID == 1 || if_Equal_UUID ==2)
+	{
+        LOG_FILE("sysprep has started!");
+		system("C:\\soft\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\unattend.xml");	
 	}
 
 	//----------------

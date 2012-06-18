@@ -98,13 +98,41 @@ SOURCE=.\ServiceTest.cpp
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"stdafx.h"
 # End Source File
+# Begin Source File
+
+SOURCE=.\tinystr.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\tinyxml.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\tinyxmlerror.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\tinyxmlparser.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE="C:\Program Files\Microsoft Visual Studio\VC98\Include\BASETSD.H"
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\tinystr.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\tinyxml.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
