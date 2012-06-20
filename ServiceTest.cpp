@@ -11,12 +11,15 @@
 #include <iostream>
 #include "io.h"
 
-#include <windows.h>
+#include <windows.h>  //added by shenxy
 #include "tinystr.h"
 #include "tinyxml.h"
 
 #include <fstream>    //added by shenxy
 #include <sstream>
+
+#define WIN08 "Windows Server 2008 R2"   //added by shenxy
+#define WIN03 "Windows Server 2003"
 
 //定义全局函数变量
 char* VER_ID="SetIP version 1.6, by Victor, 2010-05-12.";
@@ -32,6 +35,7 @@ static char* timestr();
 void LOG_FILE(char* buf);
 char cdDriver[8];
 char newhostname[128];
+char winVersion[128];         //added by shenxy
 
 TCHAR szServiceName[] = _T("ServiceTest");
 BOOL bInstall;
@@ -382,14 +386,18 @@ int SetIPByContext(char* lpBatFile)
 			strcat(buf, "\r\n");
 			fputs(buf, fp);
 
-	//	printf("OK, %s, %s, %s, %s\n", net_info[i].netcard, net_info[i].ip, net_info[i].netmask, net_info[i].gateway);
+	        //printf("OK, %s, %s, %s, %s\n", net_info[i].netcard, net_info[i].ip, net_info[i].netmask, net_info[i].gateway);
+			
 			if(strlen(net_info[i].gateway)>1)
 			{
-				//sprintf(buf, "netsh interface ip delete address %s gateway=all", net_info[i].netcard);
-                //LOG_FILE(buf);
-			    //strcat(buf, "\r\n");
-			    //fputs(buf, fp);
-
+				if(strcmp(winVersion, WIN03) == 0 )    //win03_64 only
+				{
+				    sprintf(buf, "netsh interface ip delete address %s gateway=all", net_info[i].netcard);
+                    LOG_FILE(buf);
+			        strcat(buf, "\r\n");
+			        fputs(buf, fp);
+				}
+			
 				sprintf(buf, "netsh interface ip set address %s static %s %s %s 0", net_info[i].netcard, net_info[i].ip, net_info[i].netmask, net_info[i].gateway);
 	       	}
 			else
@@ -398,11 +406,14 @@ int SetIPByContext(char* lpBatFile)
 			strcat(buf, "\r\n");
 			fputs(buf, fp);
 
-			//delete DNS
-            sprintf(buf, "netsh interface ip delete dns %s all", net_info[i].netcard);
-		    LOG_FILE(buf);
-			strcat(buf, "\r\n");
-			fputs(buf, fp);
+			//if(strcmp(winVersion, WIN08) == 0 )    //win08 only
+			//{
+			     //delete DNS
+                 sprintf(buf, "netsh interface ip delete dns %s all", net_info[i].netcard);
+		         LOG_FILE(buf);
+			     strcat(buf, "\r\n");
+		         fputs(buf, fp);
+			//}
 
 			if(strlen(dns1)>1)
 			{
@@ -419,12 +430,14 @@ int SetIPByContext(char* lpBatFile)
 				fputs(buf, fp);
 			}
 
-			//---
 			
-			//sprintf(buf, "net stop dhcp && net start dhcp");
-		    //LOG_FILE(buf);
-			//strcat(buf, "\r\n");
-			//fputs(buf, fp);
+			if(strcmp(winVersion, WIN03) == 0 )    //win03_64 only
+			{
+			     sprintf(buf, "net stop dhcp && net start dhcp");
+		         LOG_FILE(buf);
+			     strcat(buf, "\r\n");
+			     fputs(buf, fp);
+			}
 			
 			continue;
 		}
@@ -526,15 +539,6 @@ int ifEqualUUID()
 		return -2;
 	}
 
-    char hostname[128];
-	if(GetFieldValue(filename, "HOSTNAME", hostname))
-	{
-        string fullPath = "C:\\unattend.xml";
-        if(!ChangeXmlFile(fullPath,hostname))
-            LOG_FILE("Fail to change unattend.xml file!!!");
-	}else
-        LOG_FILE("No HOSTNAME in context.sh");
-
 	char vm_uuid[128];
 	if(GetFieldValue(filename, "VM_UUID", vm_uuid))
 	{
@@ -555,12 +559,24 @@ int ifEqualUUID()
 			        fputs(uuid, fp);
 
                     char setip_count[128];
-                    sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "2");
-                    fputs(setip_count, fp);
+					if(strcmp(winVersion, WIN03) == 0 )      //win03 only
+					{
+                        sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "3");
+                        fputs(setip_count, fp);
 
-	                fclose(fp);
+	                    fclose(fp);
 
-				    return 2;
+				        return 3;
+					}
+					else
+					{
+						sprintf(setip_count, "SETIP_COUNT=\"%s\"\r\n", "2");
+                        fputs(setip_count, fp);
+
+	                    fclose(fp);
+
+				        return 2;
+					}
 				}
 				else if(strcmp(count,"2") == 0)   //2
                 {
@@ -580,10 +596,29 @@ int ifEqualUUID()
 				else if(strcmp(count,"3") == 0)  //3
 				{
 					return 0;
-				}                  
+				} 
+				else     //no SETIP_COUNT or error value
+				{
+                    LOG_FILE("Error on SETIP_COUNT in bcec_vm_info.conf !!!");
+                    return 0;
+				}		
 			}	
 			else
 			{
+	            if(strcmp(winVersion, WIN08) == 0 )      //win08 only
+				{
+                     //change unattend.xml
+                     char hostname[128];
+	                 if(GetFieldValue(filename, "HOSTNAME", hostname))
+					 {
+                          string fullPath = "C:\\windows\\sysprep\\unattend.xml";
+                          if(!ChangeXmlFile(fullPath,hostname))
+                                LOG_FILE("Fail to change unattend.xml file!!!");
+				     }
+				     else
+                          LOG_FILE("No HOSTNAME in context.sh");
+				}
+
                 fp=fopen(bcec_vm_info_file,"wb");  //clear the file
                 char uuid[256];
                 sprintf(uuid, "VM_UUID=\"%s\"\r\n", vm_uuid);
@@ -600,6 +635,20 @@ int ifEqualUUID()
 		}
 		else  
 		{
+			if(strcmp(winVersion, WIN08) == 0 )      //win08 only
+			{
+                 //change unattend.xml
+                 char hostname[128];
+	             if(GetFieldValue(filename, "HOSTNAME", hostname))
+				 {
+                      string fullPath = "C:\\windows\\sysprep\\unattend.xml";
+                      if(!ChangeXmlFile(fullPath,hostname))
+                            LOG_FILE("Fail to change unattend.xml file!!!");
+				 }
+				 else
+                      LOG_FILE("No HOSTNAME in context.sh");
+			}
+
             //not exist
 			fp=fopen(bcec_vm_info_file, "wt");
 
@@ -1224,14 +1273,45 @@ void LOG_FILE(char* buf)
 	fclose(fp);
 }
 
+void GetWindowsVersion()
+{
+    OSVERSIONINFO osvi;
+    //BOOL bIsWindowsXPorLater;
+
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+    GetVersionEx(&osvi);
+
+    // 6.1 ==  Windows Server 2008 R2
+	// 5.2 ==  Windows Server 2003
+    char osversion[128];
+	sprintf(osversion,"Windows version: major == %d  minor == %d",osvi.dwMajorVersion,osvi.dwMinorVersion);
+    LOG_FILE(osversion);
+     
+	if( (osvi.dwMajorVersion == 6) && (osvi.dwMinorVersion == 1) )
+         sprintf(winVersion,WIN08);  
+	else 
+	     sprintf(winVersion,WIN03);  
+}
+
 void RunServer()
 {
 	LOG_FILE("========================================");
 	LOG_FILE(VER_ID);
 
+    GetWindowsVersion();
+
 	//strcpy(newhostname, "");
 
+	//////////////////////////////////
+	// 0 : nothing ->0
+	// 1 : Sysprep ->2(win08),3(win03)
+	// 2 : nothing ->3
+	// 3 : Set IP  ->0
+	//////////////////////////////////
 	int if_Equal_UUID = ifEqualUUID();
+
 	if( if_Equal_UUID == 0 )
 	{
 		LOG_FILE("IP Had Set, abort.");
@@ -1239,8 +1319,17 @@ void RunServer()
 	}
 	else if( if_Equal_UUID == 1 )
 	{
-        LOG_FILE("sysprep has started!");
-		system("C:\\soft\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\unattend.xml");	
+        if(strcmp(winVersion, WIN08) == 0 )    //win08 only
+		{
+			 LOG_FILE("Sysprep has started on win08 !");
+             system("C:\\windows\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\windows\\sysprep\\unattend.xml");	
+		}
+		else if (strcmp(winVersion, WIN03) == 0 ) 
+		{
+			 Sleep(10000);
+             LOG_FILE("Sysprep has started on win03 !");
+             system("C:\\windows\\sysprep\\sysprep.exe /reseal /reboot /quiet");	
+		}		 
 	}
 	else if( if_Equal_UUID == 3 )
 	{
@@ -1282,15 +1371,12 @@ void RunServer()
 			SetHostname(newhostname);
 		else
 			OnlyCreateSID();
-        */
-       
+        */ 
 	}
 	
-	//----------------
+	//Set ganglia
 	LOG_FILE("SetGangliaByContext");
     SetGangliaByContext();
-    //-----------------
-
 }
 
 string MAC2IP(string MAC)
