@@ -1321,14 +1321,52 @@ void RunServer()
 	{
         if(strcmp(winVersion, WIN08) == 0 )    //win08 only
 		{
-			 LOG_FILE("Sysprep has started on win08 !");
-             system("C:\\windows\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\windows\\sysprep\\unattend.xml");	
+             FILE *fp; 
+			 char sysprep_exe[128];
+             strcpy(sysprep_exe, "C:\\windows\\sysprep\\sysprep.exe");
+             char unattend_xml[128];
+             strcpy(unattend_xml, "C:\\windows\\sysprep\\unattend.xml");
+
+             if(NULL==(fp=fopen(sysprep_exe, "rt")))
+			 {
+	             LOG_FILE("No file sysprep.exe!");
+				 fclose(fp);
+			 }
+			 else if (NULL==(fp=fopen(unattend_xml, "rt")))
+			 {
+                 LOG_FILE("No file unattend.xml!");
+				 fclose(fp);
+			 }
+             else
+			 {
+	             LOG_FILE("Sysprep has started on win08 !");
+                 system("C:\\windows\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\windows\\sysprep\\unattend.xml");	
+			 }
 		}
 		else if (strcmp(winVersion, WIN03) == 0 ) 
 		{
-			 Sleep(10000);
-             LOG_FILE("Sysprep has started on win03 !");
-             system("C:\\windows\\sysprep\\sysprep.exe /reseal /reboot /quiet");	
+			 //Sleep(10000);
+             FILE *fp; 
+			 char sysprep_exe[128];
+             strcpy(sysprep_exe, "C:\\windows\\sysprep\\sysprep.exe");
+             char sysprep_inf[128];
+             strcpy(sysprep_inf, "C:\\windows\\sysprep\\Sysprep.inf");
+
+             if(NULL==(fp=fopen(sysprep_exe, "rt")))
+			 {
+	             LOG_FILE("No file sysprep.exe!");
+				 fclose(fp);
+			 }
+			 else if (NULL==(fp=fopen(sysprep_inf, "rt")))
+			 {
+                 LOG_FILE("No file sysprep.inf!");
+				 fclose(fp);
+			 }
+             else
+			 {
+                  LOG_FILE("Sysprep has started on win03 !");
+                  system("C:\\windows\\sysprep\\sysprep.exe /reseal /mini /reboot /quiet");	
+			 }
 		}		 
 	}
 	else if( if_Equal_UUID == 3 )
