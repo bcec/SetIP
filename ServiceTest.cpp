@@ -232,6 +232,14 @@ int ChangFieldeValue(char *file,char* key,char* value)
 		file_str.replace(position1+8,(position2-3)-(position1+10),value);    
 		writeStringIntoFile(file_str,file);
 	}
+	else if(!strcmp(key,"ComputerName"))  //key == ComputerName (sysprep.inf) 
+	{
+        position1 = (int) file_str.find(key_str.append("="));
+		position2 = (int) file_str.find("[LicenseFilePrintData]");
+        
+		file_str.replace(position1+13,(position2-1)-(position1+14),value);                 //7,4
+		writeStringIntoFile(file_str,file);
+	}
 
 	return 0; 	
 }
@@ -618,6 +626,18 @@ int ifEqualUUID()
 				     else
                           LOG_FILE("No HOSTNAME in context.sh");
 				}
+				else if(strcmp(winVersion, WIN03) == 0 )      //win03 only
+				{
+					 //change sysprep.inf
+                     char hostname[128];
+	                 if(GetFieldValue(filename, "HOSTNAME", hostname))
+					 {
+                          char fullPath[128] = "C:\\windows\\sysprep\\sysprep.inf";
+                          ChangFieldeValue(fullPath,"ComputerName",hostname);
+				     }
+				     else
+                          LOG_FILE("No HOSTNAME in context.sh");
+				}
 
                 fp=fopen(bcec_vm_info_file,"wb");  //clear the file
                 char uuid[256];
@@ -644,6 +664,18 @@ int ifEqualUUID()
                       string fullPath = "C:\\windows\\sysprep\\unattend.xml";
                       if(!ChangeXmlFile(fullPath,hostname))
                             LOG_FILE("Fail to change unattend.xml file!!!");
+				 }
+				 else
+                      LOG_FILE("No HOSTNAME in context.sh");
+			}
+			else if(strcmp(winVersion, WIN03) == 0 )      //win03 only
+			{
+			     //change sysprep.inf
+                 char hostname[128];
+	             if(GetFieldValue(filename, "HOSTNAME", hostname))
+				 {
+                      char fullPath[128] = "C:\\windows\\sysprep\\sysprep.inf";
+                      ChangFieldeValue(fullPath,"ComputerName",hostname);
 				 }
 				 else
                       LOG_FILE("No HOSTNAME in context.sh");
@@ -1343,9 +1375,8 @@ void RunServer()
                  system("C:\\windows\\sysprep\\sysprep.exe /oobe /generalize /reboot /unattend:c:\\windows\\sysprep\\unattend.xml");	
 			 }
 		}
-		else if (strcmp(winVersion, WIN03) == 0 ) 
+		else if (strcmp(winVersion, WIN03) == 0 )  //win03  only
 		{
-			 //Sleep(10000);
              FILE *fp; 
 			 char sysprep_exe[128];
              strcpy(sysprep_exe, "C:\\windows\\sysprep\\sysprep.exe");
@@ -1364,8 +1395,12 @@ void RunServer()
 			 }
              else
 			 {
+                  //copy from c:\\windows\\sysprep to c:\\sysprep
+			      mkdir("C:\\sysprep");
+			      system("xcopy C:\\windows\\sysprep c:\\sysprep");
+
                   LOG_FILE("Sysprep has started on win03 !");
-                  system("C:\\windows\\sysprep\\sysprep.exe /reseal /mini /reboot /quiet");	
+                  system("C:\\sysprep\\sysprep.exe /reseal /mini /reboot /quiet");	
 			 }
 		}		 
 	}
